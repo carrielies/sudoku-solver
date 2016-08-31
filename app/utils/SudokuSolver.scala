@@ -7,7 +7,9 @@ object SudokuSolver {
   type SolutionBoard = IndexedSeq[IndexedSeq[Int]]
 
   def solve(board: Option[Board]) = {
-    board.getOrElse(new Board(99,IndexedSeq.empty)).board
+    board.map{ foundBoard =>
+      foundBoard
+    }
   }
 
 
