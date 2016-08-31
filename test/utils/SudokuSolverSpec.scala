@@ -110,4 +110,39 @@ class SudokuSolverSpec extends PlaySpec {
 
     }
   }
+
+  "findOptionGroups" must {
+    "find pairs " in {
+      val optionValues = IndexedSeq(
+        OptionBox(0,0, None, IndexedSeq(2,3)),
+        OptionBox(0,1, Some(1)),
+        OptionBox(0,2, None, IndexedSeq(2,3)),
+        OptionBox(0,3, None, IndexedSeq(4,5)),
+        OptionBox(0,4, None, IndexedSeq(2,3,4,5,6,7,8))
+      )
+
+      val result = SudokuSolver.findOptionGroups(optionValues, 2)
+
+      result.size must be (1)
+      result(0)(0) must be (2)
+      result(0)(1) must be (3)
+    }
+
+    "find trips " in {
+      val optionValues = IndexedSeq(
+        OptionBox(0,0, None, IndexedSeq(2,3,4)),
+        OptionBox(0,1, Some(1)),
+        OptionBox(0,2, None, IndexedSeq(2,3,4)),
+        OptionBox(0,3, None, IndexedSeq(2,3,4)),
+        OptionBox(0,4, None, IndexedSeq(2,3,4,5,6,7,8))
+      )
+
+      val result = SudokuSolver.findOptionGroups(optionValues, 3)
+
+      result.size must be (1)
+      result(0)(0) must be (2)
+      result(0)(1) must be (3)
+      result(0)(2) must be (4)
+    }
+  }
 }

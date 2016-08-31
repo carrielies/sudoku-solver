@@ -41,6 +41,21 @@ object SudokuSolver {
     values.flatten.flatten
   }
 
+  def findOptionGroups(options: IndexedSeq[OptionBox], groupSize: Int): SolutionBoard = {
+    def countOccurrences(values: IndexedSeq[Int], allOptions: SolutionBoard) = {
+      allOptions.filter{checkOption => checkOption == values}.size
+    }
+
+    def findDuplicates(allOptions: SolutionBoard) = {
+      allOptions.filter{
+        optionList => countOccurrences(optionList, allOptions) == groupSize
+      }.distinct
+    }
+
+    val filteredOptions = options.filter(item => !item.value.isDefined && item.options.size == groupSize).map(_.options)
+    findDuplicates(filteredOptions)
+  }
+
   def box(x: Int, y: Int) = {
     (x / 3) * 3 + (y / 3)
   }
