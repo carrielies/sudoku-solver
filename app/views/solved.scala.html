@@ -22,8 +22,11 @@
         @if(rowTuple._2 == 3 || rowTuple._2 == 6) { <tr><td>&nbsp;</td></tr>}
         <tr>
           @rowTuple._1.zipWithIndex.map{colsTuple =>
-            @if(colsTuple._2 == 3 || colsTuple._2 == 6) { <td>&nbsp;&nbsp;&nbsp;</td>}
-            <td>&nbsp;<b>@{colsTuple._1.value.getOrElse(0)}</b>&nbsp;</td>
+            @if(colsTuple._2 == 3 || colsTuple._2 == 6) { <td><h1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h1></td>}
+            <td>
+              <h1>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h1>
+              @{colsTuple._1.options}
+            </td>
           }
         </tr>
         }
