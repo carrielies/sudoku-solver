@@ -1,4 +1,4 @@
-@(board: Option[IndexedSeq[IndexedSeq[models.OptionBox]]])
+@(board: Option[IndexedSeq[IndexedSeq[Int]]])
 
 @main("Sudoku") {
 
@@ -21,7 +21,7 @@
         @solvedBoard.map{boardRow =>
         <tr>
           @boardRow.map{box =>
-            <td> @{box.value.getOrElse(0)} </td>
+            <td> @{box} </td>
           }
         </tr>
         }

@@ -14,17 +14,14 @@ object SudokuController extends Controller {
   }
 
   def bruteForce(id:Int) = Action {
-    getSudoku(id) match {
-      case Some(foundBoard) => {
-        val solution = utils.SudokuSolver.bruteForce(foundBoard.board)
-        Ok(views.html.solved(solution))
-      }
-      case None => Ok(views.html.solved(None))
-    }
-
-
+    val solution = utils.SudokuSolver.bruteForce(getSudoku(id).map(_.board))
+    Ok(views.html.bruteForceSolved(solution))
   }
 
+  def solve(id:Int) = Action {
+    val solution = utils.SudokuSolver.solve(getSudoku(id).map(_.board))
+    Ok(views.html.solved(solution))
+  }
 
   private def getSudoku(id: Int) = {
     sudokus.find(board => board.id == id)
@@ -33,26 +30,39 @@ object SudokuController extends Controller {
   private def sudokus() = {
     //0s denote empty cells
     List(new Board(0, $(
-      $(1, 0, 0, 0, 0, 7, 0, 9, 0),
-      $(0, 3, 0, 0, 2, 0, 0, 0, 8),
-      $(0, 0, 9, 6, 0, 0, 5, 0, 0),
-      $(0, 0, 5, 3, 0, 0, 9, 0, 0),
-      $(0, 1, 0, 0, 8, 0, 0, 0, 2),
-      $(6, 0, 0, 0, 0, 4, 0, 0, 0),
-      $(3, 0, 0, 0, 0, 0, 0, 1, 0),
-      $(0, 4, 0, 0, 0, 0, 0, 0, 7),
-      $(0, 0, 7, 0, 0, 0, 3, 0, 0)
+      $(1, 0, 0,  0, 0, 7,  0, 9, 0),
+      $(0, 3, 0,  0, 2, 0,  0, 0, 8),
+      $(0, 0, 9,  6, 0, 0,  5, 0, 0),
+      $(0, 0, 5,  3, 0, 0,  9, 0, 0),
+      $(0, 1, 0,  0, 8, 0,  0, 0, 2),
+      $(6, 0, 0,  0, 0, 4,  0, 0, 0),
+      $(3, 0, 0,  0, 0, 0,  0, 1, 0),
+      $(0, 4, 0,  0, 0, 0,  0, 0, 7),
+      $(0, 0, 7,  0, 0, 0,  3, 0, 0)
     )),
     new Board(1, $(
-      $(1, 0, 0, 0, 0, 7, 0, 9, 0),
-      $(0, 3, 0, 0, 2, 0, 0, 0, 8),
-      $(0, 0, 9, 6, 0, 0, 5, 0, 0),
-      $(0, 0, 5, 3, 0, 0, 9, 0, 0),
-      $(0, 1, 0, 0, 8, 0, 0, 0, 2),
-      $(6, 0, 0, 0, 0, 4, 0, 0, 0),
-      $(3, 0, 0, 0, 0, 0, 0, 1, 0),
-      $(0, 4, 0, 0, 0, 0, 0, 0, 7),
-      $(0, 0, 7, 0, 0, 0, 3, 0, 0)
+      $(0,1,0,  3,0,4,  5,0,0),
+      $(5,0,7,  0,1,0,  4,0,0),
+      $(0,4,0,  0,7,0,  0,1,9),
+      $(4,0,0,  7,0,2,  0,0,8),
+      $(0,3,8,  0,0,0,  2,9,0),
+      $(2,0,0,  6,0,8,  0,0,7),
+      $(9,8,0,  0,2,0,  0,6,0),
+      $(0,0,4,  0,8,0,  9,0,5),
+      $(0,0,3,  9,0,6,  0,2,0)
+    )),
+    new Board(2, $(
+      $(0,3,0,  0,0,5,  9,0,0),
+      $(8,5,0,  0,0,3,  0,0,0),
+      $(0,0,0,  7,1,0,  0,0,3),
+
+      $(0,0,8,  0,0,0,  0,2,4),
+      $(0,0,5,  0,0,0,  6,0,0),
+      $(3,9,0,  0,0,0,  1,0,0),
+
+      $(6,0,0,  0,8,7,  0,0,0),
+      $(0,0,0,  6,0,0,  0,4,1),
+      $(0,0,1,  2,0,0,  0,7,0)
     )))
   }
 }
