@@ -18,10 +18,12 @@
       <h3><span class="glyphicon glyphicon-info-sign"></span> Solved Sudoku </h3>
 
       <table>
-        @solvedBoard.map{boardRow =>
+        @solvedBoard.zipWithIndex.map{rowTuple =>
+        @if(rowTuple._2 == 3 || rowTuple._2 == 6) { <tr><td>&nbsp;</td></tr>}
         <tr>
-          @boardRow.map{box =>
-            <td> @{box.value.getOrElse(0)} </td>
+          @rowTuple._1.zipWithIndex.map{colsTuple =>
+            @if(colsTuple._2 == 3 || colsTuple._2 == 6) { <td>&nbsp;&nbsp;&nbsp;</td>}
+            <td>&nbsp;<b>@{colsTuple._1.value.getOrElse(0)}</b>&nbsp;</td>
           }
         </tr>
         }

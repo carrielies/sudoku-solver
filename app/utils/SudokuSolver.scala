@@ -41,6 +41,25 @@ object SudokuSolver {
     values.flatten.flatten
   }
 
+  def setValueFromOption(value: OptionBox) : OptionBox = {
+    if (value.options.size == 1) {
+      value.copy(value = Some(value.options(0)), options = IndexedSeq.empty[Int])
+    } else {
+      value
+    }
+  }
+  def filterByOptionGroups(options: IndexedSeq[OptionBox], groupSize: Int): IndexedSeq[OptionBox] = {
+    def filterValueByOptionGroup(value: OptionBox, optionGroups: SolutionBoard): OptionBox = {
+      if (optionGroups.contains(value.options)) {
+        value
+      } else {
+        setValueFromOption(value.copy(options=value.options.diff(optionGroups.flatten)))
+      }
+    }
+    val optionGroups = findOptionGroups(options, groupSize)
+    options.map(filterValueByOptionGroup(_, optionGroups))
+  }
+
   def findOptionGroups(options: IndexedSeq[OptionBox], groupSize: Int): SolutionBoard = {
     def countOccurrences(values: IndexedSeq[Int], allOptions: SolutionBoard) = {
       allOptions.filter{checkOption => checkOption == values}.size
@@ -56,6 +75,7 @@ object SudokuSolver {
     findDuplicates(filteredOptions)
   }
 
+
   def box(x: Int, y: Int) = {
     (x / 3) * 3 + (y / 3)
   }
@@ -67,12 +87,7 @@ object SudokuSolver {
     item.value match {
       case None => {
         val valuesInSameGroup = values.filter( isSameGroup(item, _)).flatMap(_.value)
-        val optionList = item.options.diff(valuesInSameGroup)
-        if (optionList.size == 1) {
-          item.copy(value = Some(optionList(0)), options = IndexedSeq.empty[Int])
-        } else {
-          item.copy(options = optionList)
-        }
+        setValueFromOption(item.copy(options = item.options.diff(valuesInSameGroup)))
       }
       case Some(value) => item
     }
@@ -82,16 +97,26 @@ object SudokuSolver {
   def removeOptions(optionBoard: OptionsBoard): OptionsBoard = {
     val values = findSetValues(optionBoard)
     val updatedBoard = optionBoard.map(_.map(useValuesToRemoveOptions(_, values)))
-    val newValues = findSetValues(updatedBoard)
+    val groupsRemoved = removeOptionGroups(updatedBoard)
+
+    val newValues = findSetValues(groupsRemoved)
     if (values.size == newValues.size) {
-      updatedBoard
+      groupsRemoved
     } else {
-      removeOptions(updatedBoard)
+      removeOptions(groupsRemoved)
     }
   }
 
 
+  def removeOptionGroups(optionBoard: OptionsBoard): OptionsBoard = {
 
+    //Remove groups from rows
+    optionBoard.map{ row =>
+      val filteredRow = filterByOptionGroups(row, 2)
+      filterByOptionGroups(filteredRow, 3)
+    }
+
+  }
 
   def bruteForce(board: Option[SolutionBoard]) = {
     val n = 9
