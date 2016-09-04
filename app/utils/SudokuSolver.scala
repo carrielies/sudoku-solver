@@ -9,9 +9,7 @@ object SudokuSolver {
 
   def solve(board: Option[SolutionBoard]) = {
     board.map{ foundBoard =>
-      val optionsBoard = convertToOptionsBoard(foundBoard)
-
-      removeOptions(optionsBoard)
+      solveBoard(convertToOptionsBoard(foundBoard))
     }
   }
 
@@ -31,115 +29,96 @@ object SudokuSolver {
     }
   }
 
-  def findSetValues(optionBoard: OptionsBoard): IndexedSeq[OptionBox] = {
-    val values = optionBoard.map(_.map(optionBox =>
-      optionBox.value match {
-        case Some(value) => Some(optionBox)
-        case _ => None
-      }
-    ))
-    values.flatten.flatten
+
+
+
+  def solveBoard(optionBoard: OptionsBoard): OptionsBoard = {
+    def groupByCols(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => item.y)
+    }
+
+    def groupByBoxes(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => boxId(item))
+    }
+    def convertToNormal(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => item.x)
+    }
+
+    val rowUpdated = solvePerGroup(optionBoard)
+    val colUpdated = solvePerGroup(groupByCols(rowUpdated))
+    val boxUpdated = solvePerGroup(groupByBoxes(colUpdated))
+    val boardUpdated = convertToNormal(boxUpdated)
+
+    //Keep updating until nothing changes
+    if (boardUpdated == optionBoard) {
+      boardUpdated
+    } else {
+      solveBoard(boardUpdated)
+    }
   }
 
-  def setValueFromOption(value: OptionBox) : OptionBox = {
+  def solvePerGroup(optionBoard: OptionsBoard): OptionsBoard = {
+    optionBoard.map{group =>
+      removePairsFromGroup(
+        removeOptionsFromGroup(group))
+
+    }
+  }
+
+
+  def setValueFromOptions(value: OptionBox) : OptionBox = {
     if (value.options.size == 1) {
       value.copy(value = Some(value.options(0)), options = IndexedSeq.empty[Int])
     } else {
       value
     }
   }
-  def filterByOptionGroups(options: IndexedSeq[OptionBox], groupSize: Int): IndexedSeq[OptionBox] = {
-    def filterValueByOptionGroup(value: OptionBox, optionGroups: SolutionBoard): OptionBox = {
-      if (optionGroups.contains(value.options)) {
-        value
+
+  def removeOptionsFromGroup(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
+    val values = group.map(_.value).flatten
+    group.map(item => setValueFromOptions(item.copy(options = item.options.diff(values))))
+  }
+
+
+  def removePairsFromGroup(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
+    def countOccurrences(checkOption: OptionBox, groupToCheck: IndexedSeq[OptionBox]) = {
+      groupToCheck.filter{groupItem => checkOption.options == groupItem.options}.size
+    }
+
+    def filterOptions(item: OptionBox, pairsToRemove: IndexedSeq[OptionBox]) = {
+      if (item.value.isDefined || pairsToRemove.contains(item)) {
+        item
       } else {
-        setValueFromOption(value.copy(options=value.options.diff(optionGroups.flatten)))
+        val options = pairsToRemove.map(_.options).flatten
+        setValueFromOptions(item.copy(options = item.options.diff(options)))
       }
     }
-    val optionGroups = findOptionGroups(options, groupSize)
-    options.map(filterValueByOptionGroup(_, optionGroups))
-  }
 
-  def findOptionGroups(options: IndexedSeq[OptionBox], groupSize: Int): SolutionBoard = {
-    def countOccurrences(values: IndexedSeq[Int], allOptions: SolutionBoard) = {
-      allOptions.filter{checkOption => checkOption == values}.size
+    val values = group.map(_.value).flatten
+    if (values.size <= 7) {
+
+      val itemsWith2Options = group.filter(_.options.size == 2)
+      val pairsToRemove = itemsWith2Options.filter{item =>
+        countOccurrences(item, group) == 2
+      }
+
+      group.map{ filterOptions(_, pairsToRemove)}
+    } else {
+      group
     }
-
-    def findDuplicates(allOptions: SolutionBoard) = {
-      allOptions.filter{
-        optionList => countOccurrences(optionList, allOptions) == groupSize
-      }.distinct
-    }
-
-    val filteredOptions = options.filter(item => !item.value.isDefined && item.options.size == groupSize).map(_.options)
-    findDuplicates(filteredOptions)
   }
 
 
-  def box(item: OptionBox):Int = {
+  def boxId(item: OptionBox):Int = {
     (item.x / 3) * 3 + (item.y / 3)
   }
 
-  def useValuesToRemoveOptions(item: OptionBox, values: IndexedSeq[OptionBox]) = {
-    def isSameGroup(item: OptionBox, value: OptionBox) = {
-      (item.x == value.x || item.y == value.y || box(item) == box(value))
-    }
-    item.value match {
-      case None => {
-        val valuesInSameGroup = values.filter( isSameGroup(item, _)).flatMap(_.value)
-        setValueFromOption(item.copy(options = item.options.diff(valuesInSameGroup)))
-      }
-      case Some(value) => item
-    }
-  }
-
-
-  def removeOptions(optionBoard: OptionsBoard): OptionsBoard = {
-    val values = findSetValues(optionBoard)
-    val updatedBoard = optionBoard.map(_.map(useValuesToRemoveOptions(_, values)))
-    val groupsRemoved = removeOptionGroups(updatedBoard)
-
-    val newValues = findSetValues(groupsRemoved)
-    if (values.size == newValues.size) {
-      groupsRemoved
-    } else {
-      removeOptions(groupsRemoved)
-    }
-  }
-
   def groupBy(optionBoard: OptionsBoard, grouper: OptionBox => Int) : OptionsBoard = {
-    optionBoard
+    val res = optionBoard.flatten.groupBy(grouper(_)).toIndexedSeq
+    res.sortBy(_._1).map(_._2)
   }
 
-  def removeOptionGroups(optionBoard: OptionsBoard): OptionsBoard = {
-    def removeFromGroups(original: OptionsBoard, group: OptionsBoard => OptionsBoard, ungroup: OptionsBoard => OptionsBoard) : OptionsBoard = {
-      //Create groups
-      val grouped = group(original)
-      //Remove groups from rows
-      val updated = grouped.map{ group =>
-        val filteredRow = filterByOptionGroups(group, 2)
-        filterByOptionGroups(filteredRow, 3)
-      }
-      ungroup(updated)
-    }
 
-    def groupByCols(optionBoard: OptionsBoard) : OptionsBoard = {
-      groupBy(optionBoard, (item: OptionBox) => item.y)
-    }
-
-    def groupByBoxes(optionBoard: OptionsBoard) : OptionsBoard = {
-      groupBy(optionBoard, (item: OptionBox) => box(item))
-    }
-    def convertToNormal(optionBoard: OptionsBoard) : OptionsBoard = {
-      groupBy(optionBoard, (item: OptionBox) => item.x)
-    }
-
-    val updatedRows = removeFromGroups(optionBoard, (optionBoard: OptionsBoard) => optionBoard, (optionBoard: OptionsBoard) => optionBoard)
-    val updatedCols = removeFromGroups(updatedRows, groupByCols, convertToNormal)
-    removeFromGroups(updatedRows, groupByBoxes, convertToNormal)
-
-
-  }
 
   def bruteForce(board: Option[SolutionBoard]) = {
     val n = 9

@@ -1,6 +1,6 @@
 package utils
 
-import models.{Board, OptionBox}
+import models.{OptionBox, Board}
 import org.scalatestplus.play._
 import scala.collection.{IndexedSeq => $}
 
@@ -20,30 +20,30 @@ class SudokuSolverSpec extends PlaySpec {
 
   "box" must {
     "return the correct value for the x, y co-ordinates" in {
-      SudokuSolver.box(0,0) must be (0)
-      SudokuSolver.box(2,0) must be (0)
-      SudokuSolver.box(0,2) must be (0)
-      SudokuSolver.box(2,2) must be (0)
+      SudokuSolver.boxId(OptionBox(0,0)) must be (0)
+      SudokuSolver.boxId(OptionBox(2,0)) must be (0)
+      SudokuSolver.boxId(OptionBox(0,2)) must be (0)
+      SudokuSolver.boxId(OptionBox(2,2)) must be (0)
 
-      SudokuSolver.box(0,3) must be (1)
-      SudokuSolver.box(2,3) must be (1)
-      SudokuSolver.box(0,5) must be (1)
-      SudokuSolver.box(2,5) must be (1)
+      SudokuSolver.boxId(OptionBox(0,3)) must be (1)
+      SudokuSolver.boxId(OptionBox(2,3)) must be (1)
+      SudokuSolver.boxId(OptionBox(0,5)) must be (1)
+      SudokuSolver.boxId(OptionBox(2,5)) must be (1)
 
-      SudokuSolver.box(3,0) must be (3)
-      SudokuSolver.box(5,0) must be (3)
-      SudokuSolver.box(3,2) must be (3)
-      SudokuSolver.box(5,2) must be (3)
+      SudokuSolver.boxId(OptionBox(3,0)) must be (3)
+      SudokuSolver.boxId(OptionBox(5,0)) must be (3)
+      SudokuSolver.boxId(OptionBox(3,2)) must be (3)
+      SudokuSolver.boxId(OptionBox(5,2)) must be (3)
 
-      SudokuSolver.box(6,6) must be (8)
-      SudokuSolver.box(8,6) must be (8)
-      SudokuSolver.box(6,8) must be (8)
-      SudokuSolver.box(8,8) must be (8)
+      SudokuSolver.boxId(OptionBox(6,6)) must be (8)
+      SudokuSolver.boxId(OptionBox(8,6)) must be (8)
+      SudokuSolver.boxId(OptionBox(6,8)) must be (8)
+      SudokuSolver.boxId(OptionBox(8,8)) must be (8)
     }
   }
 
-  "findSetValues" must {
-    "return the correct values in a list" in {
+  "groupBy" must {
+    "successfully group by rows" in {
       val board = $(
         $(1, 0, 0, 0, 0, 7, 0, 9, 0),
         $(0, 3, 0, 0, 2, 0, 0, 0, 8),
@@ -57,62 +57,63 @@ class SudokuSolverSpec extends PlaySpec {
       )
 
       val optionBoard = SudokuSolver.convertToOptionsBoard(board)
-      val result = SudokuSolver.findSetValues(optionBoard)
-      result.size must be (23)
-      result(0).x must be (0)
-      result(0).y must be (0)
-      result(0).value must be (Some(1))
-      result(1).x must be (0)
-      result(1).y must be (5)
-      result(1).value must be (Some(7))
+      val result = SudokuSolver.groupBy(optionBoard, (item: OptionBox) => item.x)
+      result.size must be (9)
+      result(0)(0) must be (optionBoard(0)(0))
+      result(0)(1) must be (optionBoard(0)(1))
+      result(1)(0) must be (optionBoard(1)(0))
     }
-  }
 
-  "removeOptions" must {
-    "remove the correct options" in {
+    "successfully group by cols" in {
       val board = $(
-        $(1, 0, 0, 0, 0, 7, 0, 9, 0)
+        $(1, 0, 0, 0, 0, 7, 0, 9, 0),
+        $(0, 3, 0, 0, 2, 0, 0, 0, 8),
+        $(0, 0, 9, 6, 0, 0, 5, 0, 0),
+        $(0, 0, 5, 3, 0, 0, 9, 0, 0),
+        $(0, 1, 0, 0, 8, 0, 0, 0, 2),
+        $(6, 0, 0, 0, 0, 4, 0, 0, 0),
+        $(3, 0, 0, 0, 0, 0, 0, 1, 0),
+        $(0, 4, 0, 0, 0, 0, 0, 0, 7),
+        $(0, 0, 7, 0, 0, 0, 3, 0, 0)
       )
-      val optionBoard = SudokuSolver.convertToOptionsBoard(board)
-      val result = SudokuSolver.removeOptions(optionBoard)
 
-      val item1 = result(0)(0)
-      val item2 = result(0)(1)
-      item1.value must be (Some(1))
-      item2.value must be (None)
-      item2.options must be (IndexedSeq(2,3,4,5,6,8))
+      val optionBoard = SudokuSolver.convertToOptionsBoard(board)
+      val result = SudokuSolver.groupBy(optionBoard, (item: OptionBox) => item.y)
+      result.size must be (9)
+      result(0)(0) must be (optionBoard(0)(0))
+      result(0)(1) must be (optionBoard(1)(0))
+      result(1)(0) must be (optionBoard(0)(1))
     }
-    "set missing values " in {
+    "successfully group by boxId" in {
       val board = $(
-        $(1, 2, 3, 4, 0, 6, 7, 8, 9)
+        $(1, 0, 0, 0, 0, 7, 0, 9, 0),
+        $(0, 3, 0, 0, 2, 0, 0, 0, 8),
+        $(0, 0, 9, 6, 0, 0, 5, 0, 0),
+        $(0, 0, 5, 3, 0, 0, 9, 0, 0),
+        $(0, 1, 0, 0, 8, 0, 0, 0, 2),
+        $(6, 0, 0, 0, 0, 4, 0, 0, 0),
+        $(3, 0, 0, 0, 0, 0, 0, 1, 0),
+        $(0, 4, 0, 0, 0, 0, 0, 0, 7),
+        $(0, 0, 7, 0, 0, 0, 3, 0, 0)
       )
+
       val optionBoard = SudokuSolver.convertToOptionsBoard(board)
-      val result = SudokuSolver.removeOptions(optionBoard)
+      val result = SudokuSolver.groupBy(optionBoard, (item: OptionBox) => SudokuSolver.boxId(item))
+      result.size must be (9)
+      result(0)(0) must be (optionBoard(0)(0))
+      result(0)(1) must be (optionBoard(0)(1))
+      result(0)(3) must be (optionBoard(1)(0))
 
-      val item1 = result(0)(0)
-      val item4 = result(0)(4)
-      item1.value must be (Some(1))
-      item4.value must be (Some(5))
+      result(1)(0) must be (optionBoard(0)(3))
+      result(1)(1) must be (optionBoard(0)(4))
+      result(1)(3) must be (optionBoard(1)(3))
     }
+
   }
 
-  "useValuesToRemoveOptions" must {
-    "remove the correct options" in {
-      val item = OptionBox(0,0, None)
-      val values = IndexedSeq(OptionBox(1,1, Some(1)))
 
-      item.options.size must be (9)
-      item.options.diff(IndexedSeq(1,2,3)).size must be (6)
-
-
-      val result = SudokuSolver.useValuesToRemoveOptions(item, values)
-      result.options.size must be (8)
-
-    }
-  }
-
-  "findOptionGroups" must {
-    "find pairs " in {
+  "removePairsFromGroup" must {
+    "remove the correct options when we have a single pair" in {
       val optionValues = IndexedSeq(
         OptionBox(0,0, None, IndexedSeq(2,3)),
         OptionBox(0,1, Some(1)),
@@ -120,29 +121,34 @@ class SudokuSolverSpec extends PlaySpec {
         OptionBox(0,3, None, IndexedSeq(4,5)),
         OptionBox(0,4, None, IndexedSeq(2,3,4,5,6,7,8))
       )
+      val result = SudokuSolver.removePairsFromGroup(optionValues)
 
-      val result = SudokuSolver.findOptionGroups(optionValues, 2)
-
-      result.size must be (1)
-      result(0)(0) must be (2)
-      result(0)(1) must be (3)
+      result.size must be (5)
+      result(0).options must be (IndexedSeq(2,3))
+      result(2).options must be (IndexedSeq(2,3))
+      result(3).options must be (IndexedSeq(4,5))
+      result(4).options must be (IndexedSeq(4,5,6,7,8))
     }
 
-    "find trips " in {
+
+    "remove the correct options when we have a two pairs" in {
       val optionValues = IndexedSeq(
-        OptionBox(0,0, None, IndexedSeq(2,3,4)),
+        OptionBox(0,0, None, IndexedSeq(2,3)),
         OptionBox(0,1, Some(1)),
-        OptionBox(0,2, None, IndexedSeq(2,3,4)),
-        OptionBox(0,3, None, IndexedSeq(2,3,4)),
-        OptionBox(0,4, None, IndexedSeq(2,3,4,5,6,7,8))
+        OptionBox(0,2, None, IndexedSeq(2,3)),
+        OptionBox(0,3, None, IndexedSeq(4,5)),
+        OptionBox(0,4, None, IndexedSeq(2,3,4,5,6,7,8)),
+        OptionBox(0,5, None, IndexedSeq(4,5))
       )
+      val result = SudokuSolver.removePairsFromGroup(optionValues)
 
-      val result = SudokuSolver.findOptionGroups(optionValues, 3)
-
-      result.size must be (1)
-      result(0)(0) must be (2)
-      result(0)(1) must be (3)
-      result(0)(2) must be (4)
+      result.size must be (6)
+      result(0).options must be (IndexedSeq(2,3))
+      result(2).options must be (IndexedSeq(2,3))
+      result(3).options must be (IndexedSeq(4,5))
+      result(4).options must be (IndexedSeq(6,7,8))
+      result(5).options must be (IndexedSeq(4,5))
     }
   }
+
 }
