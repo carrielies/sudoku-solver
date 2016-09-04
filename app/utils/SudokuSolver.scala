@@ -76,13 +76,13 @@ object SudokuSolver {
   }
 
 
-  def box(x: Int, y: Int) = {
-    (x / 3) * 3 + (y / 3)
+  def box(item: OptionBox):Int = {
+    (item.x / 3) * 3 + (item.y / 3)
   }
 
   def useValuesToRemoveOptions(item: OptionBox, values: IndexedSeq[OptionBox]) = {
     def isSameGroup(item: OptionBox, value: OptionBox) = {
-      (item.x == value.x || item.y == value.y || box(item.x, item.y) == box(value.x, value.y))
+      (item.x == value.x || item.y == value.y || box(item) == box(value))
     }
     item.value match {
       case None => {
@@ -107,14 +107,37 @@ object SudokuSolver {
     }
   }
 
+  def groupBy(optionBoard: OptionsBoard, grouper: OptionBox => Int) : OptionsBoard = {
+    optionBoard
+  }
 
   def removeOptionGroups(optionBoard: OptionsBoard): OptionsBoard = {
-
-    //Remove groups from rows
-    optionBoard.map{ row =>
-      val filteredRow = filterByOptionGroups(row, 2)
-      filterByOptionGroups(filteredRow, 3)
+    def removeFromGroups(original: OptionsBoard, group: OptionsBoard => OptionsBoard, ungroup: OptionsBoard => OptionsBoard) : OptionsBoard = {
+      //Create groups
+      val grouped = group(original)
+      //Remove groups from rows
+      val updated = grouped.map{ group =>
+        val filteredRow = filterByOptionGroups(group, 2)
+        filterByOptionGroups(filteredRow, 3)
+      }
+      ungroup(updated)
     }
+
+    def groupByCols(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => item.y)
+    }
+
+    def groupByBoxes(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => box(item))
+    }
+    def convertToNormal(optionBoard: OptionsBoard) : OptionsBoard = {
+      groupBy(optionBoard, (item: OptionBox) => item.x)
+    }
+
+    val updatedRows = removeFromGroups(optionBoard, (optionBoard: OptionsBoard) => optionBoard, (optionBoard: OptionsBoard) => optionBoard)
+    val updatedCols = removeFromGroups(updatedRows, groupByCols, convertToNormal)
+    removeFromGroups(updatedRows, groupByBoxes, convertToNormal)
+
 
   }
 
