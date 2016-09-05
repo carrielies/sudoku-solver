@@ -151,4 +151,23 @@ class SudokuSolverSpec extends PlaySpec {
     }
   }
 
+  "setWhereAnOptionIsUsedOnce" must {
+    "set a value if an option is only in one Box" in {
+      val optionValues = IndexedSeq(
+        OptionBox(0,0, None, IndexedSeq(2)),
+        OptionBox(0,1, Some(1), IndexedSeq.empty[Int]),
+        OptionBox(0,2, None, IndexedSeq(3)),
+        OptionBox(0,3, None, IndexedSeq(4,5,6,7,8)),
+        OptionBox(0,4, None, IndexedSeq(4,5,6,7,8))
+      )
+      val result = SudokuSolver.setWhereAnOptionIsUsedOnce(optionValues)
+
+      result.size must be (5)
+      result(0).value must be (Some(2))
+      result(2).value must be (Some(3))
+      result(3).options must be (IndexedSeq(4,5,6,7,8))
+      result(4).options must be (IndexedSeq(4,5,6,7,8))
+    }
+
+  }
 }

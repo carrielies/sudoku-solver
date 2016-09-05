@@ -16,9 +16,9 @@ object SudokuSolver {
   def convertToOptionsBoard(board: SolutionBoard): OptionsBoard = {
     def convertIntToOptionBox(x:Int, y: Int, item: Int) = {
       if (item == 0) {
-        OptionBox(x, y)
+        OptionBox(x, y, isCalculated = true)
       } else {
-        OptionBox(x, y, Some(item), IndexedSeq.empty[Int])
+        OptionBox(x, y, Some(item), IndexedSeq.empty[Int], isCalculated = false)
       }
     }
 
@@ -43,12 +43,42 @@ object SudokuSolver {
     def convertToNormal(optionBoard: OptionsBoard) : OptionsBoard = {
       groupBy(optionBoard, (item: OptionBox) => item.x)
     }
-
+    println(s"----------------- Process Rows")
     val rowUpdated = solvePerGroup(optionBoard)
+    println(s"----------------- Process Cols")
     val colUpdated = solvePerGroup(groupByCols(rowUpdated))
+    println(s"----------------- Update Cols")
+    colUpdated.map{
+      row =>
+        row.map{
+          item =>
+            print(s"${item.value.getOrElse(0)}")
+        }
+        println("")
+    }
+    println(s"----------------- Process Squares")
     val boxUpdated = solvePerGroup(groupByBoxes(colUpdated))
+    println(s"----------------- Update Squares")
+    boxUpdated.map{
+      row =>
+        row.map{
+          item =>
+            print(s"${item.value.getOrElse(0)}")
+        }
+        println("")
+    }
     val boardUpdated = convertToNormal(boxUpdated)
 
+
+    println(s"----------------- Update Table")
+    boardUpdated.map{
+      row =>
+        row.map{
+          item =>
+            print(s"${item.value.getOrElse(0)}")
+        }
+        println("")
+    }
     //Keep updating until nothing changes
     if (boardUpdated == optionBoard) {
       boardUpdated
@@ -59,8 +89,14 @@ object SudokuSolver {
 
   def solvePerGroup(optionBoard: OptionsBoard): OptionsBoard = {
     optionBoard.map{group =>
-      removePairsFromGroup(
-        removeOptionsFromGroup(group))
+      removeOptionsFromGroup(
+        setWhereAnOptionIsUsedOnce(
+          removeOptionsFromGroup(
+            removePairsFromGroup(
+              removeOptionsFromGroup(group))
+          )
+        )
+      )
 
     }
   }
@@ -68,7 +104,8 @@ object SudokuSolver {
 
   def setValueFromOptions(value: OptionBox) : OptionBox = {
     if (value.options.size == 1) {
-      value.copy(value = Some(value.options(0)), options = IndexedSeq.empty[Int])
+      println(s"----------------- setValueFromOptions $value ")
+      value.copy(value = Some(value.options(0)), options = IndexedSeq.empty[Int],reason = "One Option")
     } else {
       value
     }
@@ -79,6 +116,30 @@ object SudokuSolver {
     group.map(item => setValueFromOptions(item.copy(options = item.options.diff(values))))
   }
 
+  def setWhereAnOptionIsUsedOnce(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
+    def setValueFromSingleOption(item: OptionBox, optionsWeCanSet : IndexedSeq[Int]) = {
+      val foundInList = item.options.find(opt => optionsWeCanSet.contains(opt))
+      foundInList match {
+        case Some(x) => {
+          println(s"----------------- item $item  option once $optionsWeCanSet")
+          item.copy(value = Some(x), options = IndexedSeq.empty[Int], reason = "Option Once")
+        }
+        case _ => item
+      }
+    }
+    val optionsToBeSet = group.map(_.options).flatten.distinct
+    val optionsWeCanSet = optionsToBeSet.filter { option =>
+      group.filter(opt => opt.options.contains(option)).size == 1
+    }
+    //Now set the value for any items that has a value in the optionsWeCanSet
+    group.map { item =>
+      item.value match {
+        case Some(x) => item
+        case None => setValueFromSingleOption(item, optionsWeCanSet)
+      }
+
+    }
+  }
 
   def removePairsFromGroup(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
     def countOccurrences(checkOption: OptionBox, groupToCheck: IndexedSeq[OptionBox]) = {

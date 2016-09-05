@@ -24,8 +24,13 @@
           @rowTuple._1.zipWithIndex.map{colsTuple =>
             @if(colsTuple._2 == 3 || colsTuple._2 == 6) { <td><h1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h1></td>}
             <td>
-              <h1>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h1>
-              @{colsTuple._1.options}
+              @if(colsTuple._1.isCalculated){
+                <h4>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h4>
+                @{colsTuple._1.options}
+              }else{
+                <h1>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h1>
+              }
+              @{colsTuple._1.reason}
             </td>
           }
         </tr>
