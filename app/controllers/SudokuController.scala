@@ -20,7 +20,7 @@ object SudokuController extends Controller {
 
   def solve(id:Int) = Action {
     val solution = utils.SudokuSolver.solve(getSudoku(id).map(_.board))
-    Ok(views.html.solved(solution))
+    Ok(views.html.solved(utils.SudokuSolver.isValid(solution), solution))
   }
 
   private def getSudoku(id: Int) = {

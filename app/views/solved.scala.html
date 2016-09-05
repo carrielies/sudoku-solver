@@ -1,4 +1,4 @@
-@(board: Option[IndexedSeq[IndexedSeq[models.OptionBox]]])
+@(isValid: Boolean, board: Option[IndexedSeq[IndexedSeq[models.OptionBox]]])
 
 @main("Sudoku") {
 
@@ -15,7 +15,7 @@
   <div class="row">
     <div class="col-md-6">
       @board.map{solvedBoard =>
-      <h3><span class="glyphicon glyphicon-info-sign"></span> Solved Sudoku </h3>
+      <h3><span class="glyphicon glyphicon-info-sign"></span> Solved Sudoku @isValid</h3>
 
       <table>
         @solvedBoard.zipWithIndex.map{rowTuple =>
@@ -25,12 +25,11 @@
             @if(colsTuple._2 == 3 || colsTuple._2 == 6) { <td><h1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</h1></td>}
             <td>
               @if(colsTuple._1.isCalculated){
-                <h4>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h4>
+                <h2><i>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</i></h2>
                 @{colsTuple._1.options}
               }else{
                 <h1>&nbsp;&nbsp;&nbsp;@{colsTuple._1.value.getOrElse(0)}&nbsp;&nbsp;&nbsp;</h1>
               }
-              @{colsTuple._1.reason}
             </td>
           }
         </tr>
