@@ -170,4 +170,32 @@ class SudokuSolverSpec extends PlaySpec {
     }
 
   }
+
+  "removeTrips" must {
+    "remove trips from other boxes" in {
+      // if we have three option boxes that only have a combination of 2,4,8, then we can remove these options from the others in the group
+      // i.e. in the list below item 1,7,8 only have a combination of 2,4,8. So we can remove these from item 0
+      val optionValues = IndexedSeq(
+        OptionBox(0,0, None, IndexedSeq(4,7,8,9)),
+        OptionBox(0,1, None, IndexedSeq(4,8)),
+        OptionBox(0,2, Some(6), IndexedSeq.empty[Int]),
+        OptionBox(0,3, None, IndexedSeq(1,2,9)),
+        OptionBox(0,4, Some(5), IndexedSeq.empty[Int]),
+        OptionBox(0,5, None, IndexedSeq(1,2,7)),
+        OptionBox(0,6, Some(3), IndexedSeq.empty[Int]),
+        OptionBox(0,7, None, IndexedSeq(2,4)),
+        OptionBox(0,8, None, IndexedSeq(2,8))
+      )
+      val result = SudokuSolver.removeTripOptionsFromGroup(optionValues)
+
+      result.size must be (9)
+      result(0).options must be (IndexedSeq(7,9))
+      result(1).options must be (IndexedSeq(4,8))
+      result(3).options must be (IndexedSeq(1,9))
+      result(5).options must be (IndexedSeq(1,7))
+      result(7).options must be (IndexedSeq(2,4))
+      result(8).options must be (IndexedSeq(2,8))
+    }
+
+  }
 }

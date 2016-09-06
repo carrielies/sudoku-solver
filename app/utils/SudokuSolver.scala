@@ -51,8 +51,12 @@ object SudokuSolver {
       removeOptionsFromGroup(
         setWhereAnOptionIsUsedOnce(
           removeOptionsFromGroup(
-            removePairsFromGroup(
-              removeOptionsFromGroup(group))
+            removeTripOptionsFromGroup(
+              removeOptionsFromGroup(
+                removePairsFromGroup(
+                  removeOptionsFromGroup(group))
+              )
+            )
           )
         )
       )
@@ -78,6 +82,7 @@ object SudokuSolver {
     else
       updatedGroup
   }
+
 
   def setWhereAnOptionIsUsedOnce(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
     def setValueFromSingleOption(item: OptionBox, optionsWeCanSet : IndexedSeq[Int]) = {
@@ -106,15 +111,6 @@ object SudokuSolver {
       groupToCheck.filter{groupItem => checkOption.options == groupItem.options}.size
     }
 
-    def filterOptions(item: OptionBox, pairsToRemove: IndexedSeq[OptionBox]) = {
-      if (item.value.isDefined || pairsToRemove.contains(item)) {
-        item
-      } else {
-        val options = pairsToRemove.map(_.options).flatten
-        setValueFromOptions(item.copy(options = item.options.diff(options)))
-      }
-    }
-
     val values = group.map(_.value).flatten
     if (values.size <= 7) {
 
@@ -129,6 +125,46 @@ object SudokuSolver {
     }
   }
 
+  def removeTripOptionsFromGroup(group: IndexedSeq[OptionBox]) : IndexedSeq[OptionBox] = {
+    def containsOnlyTheseOptions(item : OptionBox, options: IndexedSeq[Int]): Boolean ={
+      (!item.value.isDefined && item.options.diff(options).size == 0)
+    }
+    def countOccurrences(checkOptions: IndexedSeq[Int], groupToCheck: IndexedSeq[OptionBox]) = {
+      groupToCheck.filter{containsOnlyTheseOptions(_, checkOptions)}.size
+    }
+    def filterTripOptions(item: OptionBox, optionsGroupsToCheck: IndexedSeq[IndexedSeq[Int]]) = {
+      def optionsToRemove(optionsToRemove: IndexedSeq[Int]) = {
+        if (item.value.isDefined || containsOnlyTheseOptions(item, optionsToRemove)) {
+          IndexedSeq.empty[Int]
+        } else {
+          optionsToRemove
+        }
+      }
+
+      val unwantedOptions = optionsGroupsToCheck.map(optionsToRemove(_)).flatten
+      setValueFromOptions(item.copy(options = item.options.diff(unwantedOptions)))
+    }
+
+    // if we have three option boxes that only have a combination of 2,4,8, then we can remove these options from the others in the group
+    val values = group.map(_.value).flatten
+    if (values.size <= 6) {
+
+      val optionsLeft = group.map(_.options).flatten.distinct
+      val optionTrips = for {
+        x <- optionsLeft
+        y <- optionsLeft
+        z <- optionsLeft
+        if (x < y && y < z)
+      } yield IndexedSeq(x,y,z)
+
+      val tripsToRemove = optionTrips.filter{item =>
+        countOccurrences(item, group) == 3
+      }
+      group.map{ filterTripOptions(_, tripsToRemove)}
+    } else {
+      group
+    }
+  }
 
   def boxId(item: OptionBox):Int = {
     (item.x / 3) * 3 + (item.y / 3)
@@ -179,6 +215,16 @@ object SudokuSolver {
       case None => false
     }
   }
+
+  private def filterOptions(item: OptionBox, optionsToRemove: IndexedSeq[OptionBox]) = {
+    if (item.value.isDefined || optionsToRemove.contains(item)) {
+      item
+    } else {
+      val options = optionsToRemove.map(_.options).flatten
+      setValueFromOptions(item.copy(options = item.options.diff(options)))
+    }
+  }
+
 
   def groupByCols(optionBoard: OptionsBoard) : OptionsBoard = {
     groupBy(optionBoard, (item: OptionBox) => item.y)
